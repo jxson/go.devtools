@@ -17,6 +17,7 @@ import (
 	"v.io/x/devtools/jiri-profile-v23/android_profile"
 	"v.io/x/devtools/jiri-profile-v23/base_profile"
 	"v.io/x/devtools/jiri-profile-v23/dart_profile"
+	"v.io/x/devtools/jiri-profile-v23/flutter_profile"
 	"v.io/x/devtools/jiri-profile-v23/go_profile"
 	"v.io/x/devtools/jiri-profile-v23/java_profile"
 	"v.io/x/devtools/jiri-profile-v23/mojo_dev_profile"
@@ -39,10 +40,11 @@ func main() {
 	android_profile.Register("v23", "android")
 	base_profile.Register("v23", "base")
 	dart_profile.Register("v23", "dart")
+	flutter_profile.Register("v23", "flutter")
 	go_profile.Register("v23", "go")
 	java_profile.Register("v23", "java")
-	mojo_profile.Register("v23", "mojo")
 	mojo_dev_profile.Register("v23", "mojodev")
+	mojo_profile.Register("v23", "mojo")
 	nacl_profile.Register("v23", "nacl")
 	nodejs_profile.Register("v23", "nodejs")
 	syncbase_profile.Register("v23", "syncbase")
