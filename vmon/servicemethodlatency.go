@@ -35,10 +35,7 @@ type perMethodLatencyData struct {
 func checkServicePerMethodLatency(v23ctx *context.T, ctx *tool.Context, s *cloudmonitoring.Service) error {
 	serviceNames := []string{
 		snMounttable,
-		snBinaries,
-		snApplications,
 		snIdentity,
-		snGroups,
 		snRole,
 		snProxy,
 	}

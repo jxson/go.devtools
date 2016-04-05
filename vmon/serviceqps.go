@@ -38,12 +38,9 @@ type qpsData struct {
 func checkServiceQPS(v23ctx *context.T, ctx *tool.Context, s *cloudmonitoring.Service) error {
 	serviceNames := []string{
 		snMounttable,
-		snApplications,
-		snBinaries,
 		snIdentity,
 		snRole,
 		snProxy,
-		snGroups,
 	}
 
 	hasError := false

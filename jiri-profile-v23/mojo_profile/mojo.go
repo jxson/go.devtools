@@ -256,7 +256,85 @@ func Register(installer, profile string) {
 				sdkVersion:                  "465117ff5f34a8ef48b6a94d57f081e3c8e77ca5",
 				androidPlatformToolsVersion: "2219198",
 			},
-		}, "8"),
+			"9": &versionSpec{
+				serviceNames: []string{
+					"authenticating_url_loader_interceptor.mojo",
+					"compositor_service.mojo",
+					"dart_content_handler.mojo",
+					"debugger.mojo",
+					"files.mojo",
+					"input_manager_service.mojo",
+					"launcher.mojo",
+					"view_manager_service.mojo",
+					"tracing.mojo",
+				},
+				serviceNamesAndroid: []string{
+					"java_handler.mojo",
+					"shortcut.mojo",
+				},
+				serviceNamesLinux: []string{
+					"authentication.mojo",
+				},
+				buildVersionAndroid:         "f559b92ae36d7c4488d238ecf9459c4b81e35029",
+				buildVersionLinux:           "f559b92ae36d7c4488d238ecf9459c4b81e35029",
+				devtoolsVersion:             "9c40805af6ddc9014c5215dccbabfcafaf83e0ff",
+				networkServiceVersion:       "0a814ed5512598e595c0ae7975a09d90a7a54e90",
+				sdkVersion:                  "6ff49c5bde5c1230ca376a8f5cec035f2eba1d48",
+				androidPlatformToolsVersion: "2219198",
+			},
+			"10": &versionSpec{
+				serviceNames: []string{
+					"authenticating_url_loader_interceptor.mojo",
+					"compositor_service.mojo",
+					"dart_content_handler.mojo",
+					"debugger.mojo",
+					"files.mojo",
+					"input_manager_service.mojo",
+					"launcher.mojo",
+					"view_manager_service.mojo",
+					"tracing.mojo",
+				},
+				serviceNamesAndroid: []string{
+					"java_handler.mojo",
+					"shortcut.mojo",
+				},
+				serviceNamesLinux: []string{
+					"authentication.mojo",
+				},
+				buildVersionAndroid:         "891577b0517de5aeca538d99669787c6dc72412a",
+				buildVersionLinux:           "891577b0517de5aeca538d99669787c6dc72412a",
+				devtoolsVersion:             "176889fd2e17f988727847a03b00c158af8a6c52",
+				networkServiceVersion:       "0a814ed5512598e595c0ae7975a09d90a7a54e90",
+				sdkVersion:                  "8d13caec84db234e320129722d2f0d5d873def11",
+				androidPlatformToolsVersion: "2219198",
+			},
+			"11": &versionSpec{
+				serviceNames: []string{
+					"authenticating_url_loader_interceptor.mojo",
+					"compositor_service.mojo",
+					"dart_content_handler.mojo",
+					"debugger.mojo",
+					"files.mojo",
+					"input_manager_service.mojo",
+					"launcher.mojo",
+					"view_manager_service.mojo",
+					"tracing.mojo",
+				},
+				serviceNamesAndroid: []string{
+					"java_handler.mojo",
+					"shortcut.mojo",
+				},
+				serviceNamesLinux: []string{
+					"authentication.mojo",
+				},
+				buildVersionAndroid:         "91a7a240f90012cbc8c527d04f6a70609769dd1e",
+				buildVersionLinux:           "91a7a240f90012cbc8c527d04f6a70609769dd1e",
+				devtoolsVersion:             "176889fd2e17f988727847a03b00c158af8a6c52",
+				networkServiceVersion:       "0a814ed5512598e595c0ae7975a09d90a7a54e90",
+				sdkVersion:                  "0cd77a9a96e4b21311883b67503c5f5977fdb48d",
+				androidPlatformToolsVersion: "2219198",
+			},
+		}, "11"),
 	}
 	profilesmanager.Register(m)
 }
@@ -395,8 +473,8 @@ func (m *Manager) installAndroidPlatformTools(jirix *jiri.X, outDir string) erro
 		androidPlatformToolsZipFile := filepath.Join(tmpDir, "platform-tools.zip")
 		return jirix.NewSeq().
 			Call(func() error {
-			return profilesutil.Fetch(jirix, androidPlatformToolsZipFile, androidPlatformToolsUrl(m.spec.androidPlatformToolsVersion))
-		}, "fetch android platform tools").
+				return profilesutil.Fetch(jirix, androidPlatformToolsZipFile, androidPlatformToolsUrl(m.spec.androidPlatformToolsVersion))
+			}, "fetch android platform tools").
 			Call(func() error { return profilesutil.Unzip(jirix, androidPlatformToolsZipFile, tmpDir) }, "unzip android platform tools").
 			MkdirAll(filepath.Dir(outDir), profilesutil.DefaultDirPerm).
 			Rename(filepath.Join(tmpDir, "platform-tools"), outDir).
@@ -591,8 +669,8 @@ func (m *Manager) installMojoSystemThunks(jirix *jiri.X, outDir string) error {
 		outFile := filepath.Join(outDir, "libsystem_thunks.a")
 		return jirix.NewSeq().MkdirAll(outDir, profilesutil.DefaultDirPerm).
 			Call(func() error {
-			return profilesutil.Fetch(jirix, outFile, mojoSystemThunksUrl(m.platform, m.buildVersion))
-		}, "fetch mojo system thunks").Done()
+				return profilesutil.Fetch(jirix, outFile, mojoSystemThunksUrl(m.platform, m.buildVersion))
+			}, "fetch mojo system thunks").Done()
 	}
 	return profilesutil.AtomicAction(jirix, fn, outDir, "Download Mojo system thunks")
 }

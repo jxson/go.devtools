@@ -1,4 +1,4 @@
-// Copyright 2015 The Vanadium Authors. All rights reserved.
+// Copyright 2016 The Vanadium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -30,7 +30,7 @@ To see the list of available adb commands, type 'adb help'.
 `,
 }
 
-func runMadbExecForDevice(env *cmdline.Env, args []string, d device) error {
+func runMadbExecForDevice(env *cmdline.Env, args []string, d device, properties variantProperties) error {
 	sh := gosh.NewShell(nil)
 	defer sh.Cleanup()
 
@@ -38,5 +38,5 @@ func runMadbExecForDevice(env *cmdline.Env, args []string, d device) error {
 
 	cmdArgs := append([]string{"-s", d.Serial}, args...)
 	cmd := sh.Cmd("adb", cmdArgs...)
-	return runGoshCommandForDevice(cmd, d)
+	return runGoshCommandForDevice(cmd, d, false)
 }

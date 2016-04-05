@@ -135,16 +135,6 @@ func testAllProdServices(jirix *jiri.X, principalDir, namespaceRoot string) []*x
 			regexp:     regexp.MustCompile(`MountTable[[:space:]]+interface`),
 		},
 		prodService{
-			name:       "application repository",
-			objectName: namespaceRoot + "/applications",
-			regexp:     regexp.MustCompile(`Application[[:space:]]+interface`),
-		},
-		prodService{
-			name:       "binary repository",
-			objectName: namespaceRoot + "/binaries",
-			regexp:     regexp.MustCompile(`Binary[[:space:]]+interface`),
-		},
-		prodService{
 			name:       "macaroon service",
 			objectName: namespaceRoot + "/identity/dev.v.io:u/macaroon",
 			regexp:     regexp.MustCompile(`MacaroonBlesser[[:space:]]+interface`),
@@ -219,7 +209,7 @@ func setupPrincipal(jirix *jiri.X, tmpdir, pubkey string, blessingNames []string
 	s := jirix.NewSeq()
 	dir := filepath.Join(tmpdir, "credentials")
 	bin := filepath.Join(jirix.Root, "release", "go", "bin", "principal")
-	if err := s.Timeout(test.DefaultTimeout).Last(bin, "create", dir, "prod-services-tester"); err != nil {
+	if err := s.Timeout(test.DefaultTimeout).Last(bin, "create", "-with-passphrase=false", dir, "prod-services-tester"); err != nil {
 		fmt.Fprintf(jirix.Stderr(), "principal create failed: %v\n", err)
 		return "", err
 	}

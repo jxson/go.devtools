@@ -1,4 +1,4 @@
-// Copyright 2015 The Vanadium Authors. All rights reserved.
+// Copyright 2016 The Vanadium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -32,7 +32,7 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 
 `
 
-	got, err := parseDevicesOutput(output, nil)
+	got, err := parseDevicesOutput(output, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to parse the output: %v", err)
 	}
@@ -44,6 +44,7 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 			Qualifiers: []string{"usb:3-3.4.3", "product:bullhead", "model:Nexus_5X", "device:bullhead"},
 			Nickname:   "",
 			Index:      1,
+			UserID:     "",
 		},
 		device{
 			Serial:     "emulator-5554",
@@ -51,6 +52,7 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 			Qualifiers: []string{"product:sdk_phone_armv7", "model:sdk_phone_armv7", "device:generic"},
 			Nickname:   "",
 			Index:      2,
+			UserID:     "",
 		},
 	}
 
@@ -63,7 +65,7 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 
 `
 
-	got, err = parseDevicesOutput(output, nil)
+	got, err = parseDevicesOutput(output, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to parse the output: %v", err)
 	}
@@ -77,7 +79,7 @@ deviceid01       offline usb:3-3.4.3 product:bullhead model:Nexus_5X device:bull
 deviceid02       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:generic
 
 `
-	got, err = parseDevicesOutput(output, nil)
+	got, err = parseDevicesOutput(output, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to parse the output: %v", err)
 	}
@@ -89,6 +91,7 @@ deviceid02       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:gen
 			Qualifiers: []string{"product:sdk_phone_armv7", "model:sdk_phone_armv7", "device:generic"},
 			Nickname:   "",
 			Index:      2,
+			UserID:     "",
 		},
 	}
 
@@ -103,12 +106,16 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 
 	`
 
-	nsm := map[string]string{
+	nicknameSerialMap := map[string]string{
 		"MyPhone": "deviceid01",
 		"ARMv7":   "model:sdk_phone_armv7",
 	}
 
-	got, err = parseDevicesOutput(output, nsm)
+	serialUserMap := map[string]string{
+		"deviceid01": "10",
+	}
+
+	got, err = parseDevicesOutput(output, nicknameSerialMap, serialUserMap)
 	if err != nil {
 		t.Fatalf("failed to parse the output: %v", err)
 	}
@@ -120,6 +127,7 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 			Qualifiers: []string{"usb:3-3.4.3", "product:bullhead", "model:Nexus_5X", "device:bullhead"},
 			Nickname:   "MyPhone",
 			Index:      1,
+			UserID:     "10",
 		},
 		device{
 			Serial:     "emulator-5554",
@@ -127,6 +135,7 @@ emulator-5554       device product:sdk_phone_armv7 model:sdk_phone_armv7 device:
 			Qualifiers: []string{"product:sdk_phone_armv7", "model:sdk_phone_armv7", "device:generic"},
 			Nickname:   "ARMv7",
 			Index:      2,
+			UserID:     "",
 		},
 	}
 
@@ -143,6 +152,7 @@ func TestGetSpecifiedDevices(t *testing.T) {
 		Qualifiers: []string{"usb:3-3.4.3", "product:bullhead", "model:Nexus_5X", "device:bullhead"},
 		Nickname:   "MyPhone",
 		Index:      1,
+		UserID:     "",
 	}
 
 	d2 := device{
@@ -151,6 +161,7 @@ func TestGetSpecifiedDevices(t *testing.T) {
 		Qualifiers: []string{"usb:3-3.4.1", "product:volantisg", "model:Nexus_9", "device:flounder_lte"},
 		Nickname:   "",
 		Index:      2,
+		UserID:     "",
 	}
 
 	e1 := device{
@@ -159,6 +170,7 @@ func TestGetSpecifiedDevices(t *testing.T) {
 		Qualifiers: []string{"product:sdk_phone_armv7", "model:sdk_phone_armv7", "device:generic"},
 		Nickname:   "ARMv7",
 		Index:      3,
+		UserID:     "",
 	}
 
 	d3 := device{
@@ -167,6 +179,7 @@ func TestGetSpecifiedDevices(t *testing.T) {
 		Qualifiers: []string{"usb:3-3.3", "product:bullhead", "model:Nexus_5X", "device:bullhead"},
 		Nickname:   "SecondPhone",
 		Index:      4,
+		UserID:     "",
 	}
 
 	e2 := device{
@@ -175,6 +188,7 @@ func TestGetSpecifiedDevices(t *testing.T) {
 		Qualifiers: []string{"product:sdk_phone_armv7", "model:sdk_phone_armv7", "device:generic"},
 		Nickname:   "",
 		Index:      5,
+		UserID:     "",
 	}
 
 	allDevices := []device{d1, d2, e1, d3, e2}
@@ -255,64 +269,64 @@ func TestIsGradleProject(t *testing.T) {
 	}
 }
 
-func TestExtractIdsFromGradle(t *testing.T) {
-	testCases := []struct {
+func TestExtractPropertiesFromGradle(t *testing.T) {
+	tests := []struct {
 		key  variantKey
-		want projectIds
+		want variantProperties
 	}{
 		{
 			variantKey{"testMultiPlatform/android", "", ""},
-			projectIds{"io.v.testProjectId", "io.v.testProjectPackage.LauncherActivity"},
+			variantProperties{AppID: "io.v.testProjectId", Activity: "io.v.testProjectPackage.LauncherActivity"},
 		},
 		{
 			variantKey{"testMultiPlatform/android", "app", "debug"},
-			projectIds{"io.v.testProjectId", "io.v.testProjectPackage.LauncherActivity"},
+			variantProperties{AppID: "io.v.testProjectId", Activity: "io.v.testProjectPackage.LauncherActivity"},
 		},
 		{
 			variantKey{"testMultiPlatform/android/app", "", ""},
-			projectIds{"io.v.testProjectId", "io.v.testProjectPackage.LauncherActivity"},
+			variantProperties{AppID: "io.v.testProjectId", Activity: "io.v.testProjectPackage.LauncherActivity"},
 		},
 		{
 			variantKey{"testAndroidMultiFlavor", "", ""},
-			projectIds{"io.v.testProjectId.lite", "io.v.testProjectPackage.LauncherActivity"},
+			variantProperties{AppID: "io.v.testProjectId.lite.debug", Activity: "io.v.testProjectPackage.LauncherActivity"},
 		},
 		{
 			variantKey{"testAndroidMultiFlavor", "app", "liteDebug"},
-			projectIds{"io.v.testProjectId.lite.debug", "io.v.testProjectPackage.LauncherActivity"},
+			variantProperties{AppID: "io.v.testProjectId.lite.debug", Activity: "io.v.testProjectPackage.LauncherActivity"},
 		},
 		{
 			variantKey{"testAndroidMultiFlavor/app", "", "proRelease"},
-			projectIds{"io.v.testProjectId.pro", "io.v.testProjectPackage.LauncherActivity"},
+			variantProperties{AppID: "io.v.testProjectId.pro", Activity: "io.v.testProjectPackage.LauncherActivity"},
 		},
 	}
 
-	for i, testCase := range testCases {
-		testCase.key.Dir = filepath.Join("testdata", "projects", testCase.key.Dir)
-		got, err := extractIdsFromGradle(testCase.key)
+	for i, test := range tests {
+		test.key.Dir = filepath.Join("testdata", "projects", test.key.Dir)
+		got, err := extractPropertiesFromGradle(test.key)
 		if err != nil {
-			t.Fatalf("error occurred while extracting ids for testCases[%v]: %v", i, err)
+			t.Fatalf("error occurred while extracting properties for testCases[%v]: %v", i, err)
 		}
 
-		if !reflect.DeepEqual(got, testCase.want) {
-			t.Fatalf("unmatched results for testCases[%v]: got %v, want %v", i, got, testCase.want)
+		if got.AppID != test.want.AppID || got.Activity != test.want.Activity {
+			t.Fatalf("unmatched results for testCases[%v]: got %v, want %v", i, got, test.want)
 		}
 	}
 }
 
-func TestGetProjectIds(t *testing.T) {
+func TestGetProjectProperties(t *testing.T) {
 	cacheFile := tempFilename(t)
 	defer os.Remove(cacheFile)
 
 	called := false
 
 	// See if it runs the extractor for the first time.
-	extractor := func(key variantKey) (projectIds, error) {
+	extractor := func(key variantKey) (variantProperties, error) {
 		called = true
-		return projectIds{"testAppID", "Activity"}, nil
+		return variantProperties{AppID: "testAppID", Activity: "Activity"}, nil
 	}
 
-	want := projectIds{"testAppID", "Activity"}
-	got, err := getProjectIds(extractor, variantKey{"testDir", "mod", "var"}, false, cacheFile)
+	want := variantProperties{AppID: "testAppID", Activity: "Activity"}
+	got, err := getProjectProperties(extractor, variantKey{"testDir", "mod", "var"}, false, cacheFile)
 
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -328,7 +342,7 @@ func TestGetProjectIds(t *testing.T) {
 
 	// The second run should not invoke the extractor.
 	called = false
-	got, err = getProjectIds(extractor, variantKey{"testDir", "mod", "var"}, false, cacheFile)
+	got, err = getProjectProperties(extractor, variantKey{"testDir", "mod", "var"}, false, cacheFile)
 
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -344,7 +358,7 @@ func TestGetProjectIds(t *testing.T) {
 
 	// Run with clear cache flag.
 	called = false
-	got, err = getProjectIds(extractor, variantKey{"testDir", "mod", "var"}, true, cacheFile)
+	got, err = getProjectProperties(extractor, variantKey{"testDir", "mod", "var"}, true, cacheFile)
 
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -356,5 +370,24 @@ func TestGetProjectIds(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unmatched results: got %v, want %v", got, want)
+	}
+}
+
+// TestEmbeddedGradleScript tests whether the gradle script defined in embedded_gradle.go matches
+// the madb_init.gradle file.
+func TestEmbeddedGradleScript(t *testing.T) {
+	f, err := os.Open("madb_init.gradle")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(bytes) != gradleInitScript {
+		t.Fatalf(`The embedded Gradle script is out of date. Please run "jiri go generate" to regenerate the embedded script.`)
 	}
 }

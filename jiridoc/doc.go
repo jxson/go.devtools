@@ -13,18 +13,18 @@ Usage:
 
 The jiri commands are:
    cl           Manage project changelists
-   contributors List project contributors
    import       Adds imports to .jiri_manifest file
    profile      Display information about installed profiles
    project      Manage the jiri projects
    rebuild      Rebuild all jiri tools
    snapshot     Manage project snapshots
    update       Update all jiri tools and projects
-   upgrade      Upgrade jiri to new-style manifests
    which        Show path to the jiri tool
+   runp         Run a command in parallel across jiri projects
    help         Display help for commands or topics
 The jiri external commands are:
    api          Manage vanadium public API
+   contributors List project contributors
    copyright    Manage vanadium copyright
    dockergo     Execute the go command in a docker container
    go           Execute the go tool using the vanadium environment
@@ -35,7 +35,7 @@ The jiri external commands are:
                 environment
    swift        Compile the Swift framework
    test         Manage vanadium tests
-   v23-profile  Manage profiles
+   v23-profile  No description available
 
 The jiri additional help topics are:
    filesystem  Description of jiri file system layout
@@ -187,28 +187,6 @@ The jiri cl sync flags are:
  -v=false
    Print verbose output.
 
-Jiri contributors - List project contributors
-
-Lists project contributors. Projects to consider can be specified as an
-argument. If no projects are specified, all projects in the current manifest are
-considered by default.
-
-Usage:
-   jiri contributors [flags] <projects>
-
-<projects> is a list of projects to consider.
-
-The jiri contributors flags are:
- -aliases=
-   Path to the aliases file.
- -n=false
-   Show number of contributions.
-
- -color=true
-   Use color to format output.
- -v=false
-   Print verbose output.
-
 Jiri import
 
 Command "import" adds imports to the $JIRI_ROOT/.jiri_manifest file, which
@@ -310,9 +288,9 @@ The jiri profile list flags are:
    	Note: if no profiles are specified then the requested field will be displayed for all profiles.
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -328,7 +306,7 @@ Jiri profile env - Display profile environment variables
 
 List profile specific and target specific environment variables. If the
 requested environment variable name ends in = then only the value will be
-printed, otherwise both name and value are printed, i.e. GOPATH="foo" vs just
+printed, otherwise both name and value are printed, i.e. CFLAGS="foo" vs just
 "foo".
 
 If no environment variable names are requested then all will be printed in
@@ -345,9 +323,9 @@ The jiri profile env flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -373,7 +351,7 @@ The jiri profile install flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -force=false
    force install the profile even if it is already installed
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
@@ -397,7 +375,7 @@ Usage:
 The jiri profile uninstall flags are:
  -all-targets=false
    apply to all targets for the specified profile(s)
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
@@ -419,7 +397,7 @@ Usage:
 <profiles> is a list of profiles to update, if omitted all profiles are updated.
 
 The jiri profile update flags are:
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
@@ -444,7 +422,7 @@ cleaned.
 The jiri profile cleanup flags are:
  -gc=false
    uninstall profile targets that are older than the current default
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
@@ -483,9 +461,10 @@ Usage:
 
 The jiri project commands are:
    clean        Restore jiri projects to their pristine state
+   info         Provided structured input for existing jiri projects and
+                branches
    list         List existing jiri projects and branches
    shell-prompt Print a succinct status of projects suitable for shell prompts
-   poll         Poll existing jiri projects
 
 The jiri project flags are:
  -color=true
@@ -506,6 +485,36 @@ Usage:
 The jiri project clean flags are:
  -branches=false
    Delete all non-master branches.
+
+ -color=true
+   Use color to format output.
+ -v=false
+   Print verbose output.
+
+Jiri project info - Provided structured input for existing jiri projects and branches
+
+Inspect the local filesystem and provide structured info on the existing
+projects and branches. Projects are specified using regular expressions that are
+matched against project keys. If no command line arguments are provided the
+project that the contains the current directory is used, or if run from outside
+of a given project, all projects will be used. The information to be displayed
+is specified using a go template, supplied via the -f flag, that is executed
+against the v.io/jiri/project.ProjectState structure. This structure currently
+has the following fields:
+project.ProjectState{Branches:[]project.BranchState(nil), CurrentBranch:"",
+HasUncommitted:false, HasUntracked:false, Project:project.Project{Name:"",
+Path:"", Protocol:"", Remote:"", RemoteBranch:"", Revision:"", GerritHost:"",
+GitHooks:"", RunHook:"", XMLName:struct {}{}}}
+
+Usage:
+   jiri project info [flags] <project-keys>...
+
+<project-keys>... a list of project keys, as regexps, to apply the specified
+format to
+
+The jiri project info flags are:
+ -f={{.Project.Name}}
+   The go template for the fields to display.
 
  -color=true
    Use color to format output.
@@ -548,26 +557,6 @@ The jiri project shell-prompt flags are:
    the output.
  -show-name=false
    Show the name of the current repo.
-
- -color=true
-   Use color to format output.
- -v=false
-   Print verbose output.
-
-Jiri project poll - Poll existing jiri projects
-
-Poll jiri projects that can affect the outcome of the given tests and report
-whether any new changes in these projects exist. If no tests are specified, all
-projects are polled by default.
-
-Usage:
-   jiri project poll [flags] <test ...>
-
-<test ...> is a list of tests that determine what projects to poll.
-
-The jiri project poll flags are:
- -manifest=
-   Name of the project manifest.
 
  -color=true
    Use color to format output.
@@ -726,49 +715,6 @@ The jiri update flags are:
  -v=false
    Print verbose output.
 
-Jiri upgrade - Upgrade jiri to new-style manifests
-
-Upgrades jiri to use new-style manifests.
-
-The old (deprecated) behavior only allowed a single manifest repository, located
-in $JIRI_ROOT/.manifest.  The initial manifest file is located as follows:
-  1) Use -manifest flag, if non-empty.  If it's empty...
-  2) Use $JIRI_ROOT/.local_manifest file.  If it doesn't exist...
-  3) Use $JIRI_ROOT/.manifest/v2/default.
-
-The new behavior allows multiple manifest repositories, by allowing imports to
-specify project attributes describing the remote repository.  The -manifest flag
-is no longer allowed to be set; the initial manifest file is always located in
-$JIRI_ROOT/.jiri_manifest.  The .local_manifest file is ignored.
-
-During the transition phase, both old and new behaviors are supported.  The jiri
-tool uses the existence of the $JIRI_ROOT/.jiri_manifest file as the signal; if
-it exists we run the new behavior, otherwise we run the old behavior.
-
-The new behavior includes a "jiri import" command, which writes or updates the
-.jiri_manifest file.  The new bootstrap procedure runs "jiri import", and it is
-intended as a regular command to add imports to your jiri environment.
-
-This upgrade command eases the transition by writing an initial .jiri_manifest
-file for you.  If you have an existing .local_manifest file, its contents will
-be incorporated into the new .jiri_manifest file, and it will be renamed to
-.local_manifest.BACKUP.  The -revert flag deletes the .jiri_manifest file, and
-restores the .local_manifest file.
-
-Usage:
-   jiri upgrade [flags] <kind>
-
-<kind> specifies the kind of upgrade, one of "v23" or "fuchsia".
-
-The jiri upgrade flags are:
- -revert=false
-   Revert the upgrade by deleting the $JIRI_ROOT/.jiri_manifest file.
-
- -color=true
-   Use color to format output.
- -v=false
-   Print verbose output.
-
 Jiri which - Show path to the jiri tool
 
 Which behaves similarly to the unix commandline tool.  It is useful in
@@ -793,6 +739,78 @@ The jiri which flags are:
    Use color to format output.
  -v=false
    Print verbose output.
+
+Jiri runp - Run a command in parallel across jiri projects
+
+Run a command in parallel across one or more jiri projects using the specified
+profile target's environment. Commands are run using the shell specified by the
+users $SHELL environment variable, or "sh" if that's not set. Thus commands are
+run as $SHELL -c "args..."
+
+Usage:
+   jiri runp [flags] <command line>
+
+A command line to be run in each project specified by the supplied command line
+flags. Any environment variables intended to be evaluated when the command line
+is run must be quoted to avoid expansion before being passed to runp by the
+shell.
+
+The jiri runp flags are:
+ -collate-stdout=true
+   Collate all stdout output from each parallel invocation and display it as if
+   had been generated sequentially. This flag cannot be used with
+   -show-name-prefix, -show-key-prefix or -interactive.
+ -env=
+   specify an environment variable in the form: <var>=[<val>],...
+ -exit-on-error=false
+   If set, all commands will killed as soon as one reports an error, otherwise,
+   each will run to completion.
+ -has-branch=
+   A regular expression specifying branch names to use in matching projects. A
+   project will match if the specified branch exists, even if it is not checked
+   out.
+ -has-gerrit-message=false
+   If specified, match branches that have, or have no, gerrit message
+ -has-uncommitted=false
+   If specified, match projects that have, or have no, uncommitted changes
+ -has-untracked=false
+   If specified, match projects that have, or have no, untracked files
+ -interactive=true
+   If set, the command to be run is interactive and should not have its
+   stdout/stderr manipulated. This flag cannot be used with -show-name-prefix,
+   -show-key-prefix or -collate-stdout.
+ -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
+   specify policies for merging environment variables
+ -profiles=v23:base
+   a comma separated list of profiles to use
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
+   the path, relative to JIRI_ROOT, that contains the profiles database.
+ -projects=
+   A Regular expression specifying project keys to run commands in. By default,
+   runp will use projects that have the same branch checked as the current
+   project unless it is run from outside of a project in which case it will
+   default to using all projects.
+ -show-key-prefix=false
+   If set, each line of output from each project will begin with the key of the
+   project followed by a colon. This is intended for use with long running
+   commands where the output needs to be streamed. Stdout and stderr are spliced
+   apart. This flag cannot be used with -interactive, -show-name-prefix or
+   -collate-stdout
+ -show-name-prefix=false
+   If set, each line of output from each project will begin with the name of the
+   project followed by a colon. This is intended for use with long running
+   commands where the output needs to be streamed. Stdout and stderr are spliced
+   apart. This flag cannot be used with -interactive, -show-key-prefix or
+   -collate-stdout.
+ -skip-profiles=false
+   if set, no profiles will be used
+ -target=<runtime.GOARCH>-<runtime.GOOS>
+   specifies a profile target in the following form: <arch>-<os>[@<version>]
+ -v=false
+   Print verbose logging information
+
+ -color=true
+   Use color to format output.
 
 Jiri help - Display help for commands or topics
 
@@ -844,9 +862,9 @@ The jiri api flags are:
    Name of the project manifest.
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -881,9 +899,9 @@ The jiri api check flags are:
    Name of the project manifest.
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -914,9 +932,9 @@ The jiri api fix flags are:
    Name of the project manifest.
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -924,6 +942,33 @@ The jiri api fix flags are:
    specifies a profile target in the following form: <arch>-<os>[@<version>]
  -v=false
    Print verbose output.
+
+Jiri contributors - List project contributors
+
+List project contributors.
+
+Usage:
+   jiri contributors [flags] <command>
+
+The jiri contributors commands are:
+   contributors List project contributors
+
+Jiri contributors contributors - List project contributors
+
+Lists project contributors. Projects to consider can be specified as an
+argument. If no projects are specified, all projects in the current manifest are
+considered by default.
+
+Usage:
+   jiri contributors contributors [flags] <projects>
+
+<projects> is a list of projects to consider.
+
+The jiri contributors contributors flags are:
+ -aliases=
+   Path to the aliases file.
+ -n=false
+   Show number of contributions.
 
 Jiri copyright - Manage vanadium copyright
 
@@ -1031,9 +1076,9 @@ The jiri dockergo flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1061,9 +1106,9 @@ The jiri go flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1089,9 +1134,9 @@ The jiri goext flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1119,9 +1164,9 @@ The jiri goext distclean flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1391,9 +1436,9 @@ The jiri run flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1461,7 +1506,7 @@ The jiri swift build flags are:
 Jiri swift clean - Removes generated cgo binaries and headers
 
 Removes generated cgo binaries and headers that fall under
-$JIRI_ROOT/release/swift/lib/v23/x
+$JIRI_ROOT/release/swift/lib/VanadiumCore/x
 
 Usage:
    jiri swift clean [flags]
@@ -1480,6 +1525,7 @@ Usage:
    jiri test [flags] <command>
 
 The jiri test commands are:
+   poll        Poll existing jiri projects
    project     Run tests for a vanadium project
    run         Run vanadium tests
    list        List vanadium tests
@@ -1491,9 +1537,41 @@ The jiri test flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
+   the path, relative to JIRI_ROOT, that contains the profiles database.
+ -skip-profiles=false
+   if set, no profiles will be used
+ -target=<runtime.GOARCH>-<runtime.GOOS>
+   specifies a profile target in the following form: <arch>-<os>[@<version>]
+ -v=false
+   Print verbose output.
+
+Jiri test poll - Poll existing jiri projects
+
+Poll jiri projects that can affect the outcome of the given tests and report
+whether any new changes in these projects exist. If no tests are specified, all
+projects are polled by default.
+
+Usage:
+   jiri test poll [flags] <test ...>
+
+<test ...> is a list of tests that determine what projects to poll.
+
+The jiri test poll flags are:
+ -manifest=
+   Name of the project manifest.
+
+ -color=true
+   Use color to format output.
+ -env=
+   specify an environment variable in the form: <var>=[<val>],...
+ -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
+   specify policies for merging environment variables
+ -profiles=v23:base
+   a comma separated list of profiles to use
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1521,9 +1599,9 @@ The jiri test project flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1574,9 +1652,9 @@ The jiri test run flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1599,9 +1677,9 @@ The jiri test list flags are:
    specify an environment variable in the form: <var>=[<val>],...
  -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
    specify policies for merging environment variables
- -profiles=base,jiri
+ -profiles=v23:base
    a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
  -skip-profiles=false
    if set, no profiles will be used
@@ -1610,300 +1688,7 @@ The jiri test list flags are:
  -v=false
    Print verbose output.
 
-Jiri v23-profile - Manage profiles
-
-Profiles are used to manage external sofware dependencies and offer a balance
-between providing no support at all and a full blown package manager. Profiles
-can be built natively as well as being cross compiled. A profile is a named
-collection of software required for a given system component or application.
-Current example profiles include 'syncbase' which consists of the leveldb and
-snappy libraries or 'android' which consists of all of the android components
-and downloads needed to build android applications. Profiles are built for
-specific targets.
-
-Targets
-
-Profiles generally refer to uncompiled source code that needs to be compiled for
-a specific "target". Targets hence represent compiled code and consist of:
-
-1. An 'architecture' that refers to the CPU to be generate code for
-
-2. An 'operating system' that refers to the operating system to generate code
-for
-
-3. A lexicographically orderd set of supported versions, one of which is
-designated as the default.
-
-4. An 'environment' which is a set of environment variables to use when
-compiling the profile
-
-Targets thus provide the basic support needed for cross compilation.
-
-Targets are versioned and multiple versions may be installed and used
-simultaneously. Versions are ordered lexicographically and each target specifies
-a 'default' version to be used when a specific version is not explicitly
-requested. A request to 'upgrade' the profile will result in the installation of
-the default version of the targets currently installed if that default version
-is not already installed.
-
-The Supported Commands
-
-Profiles, or more correctly, targets for specific profiles may be installed or
-removed. When doing so, the name of the profile is required, but the other
-components of the target are optional and will default to the values of the
-system that the commands are run on (so-called native builds) and the default
-version for that target. Once a profile is installed it may be referred to by
-its tag for subsequent removals.
-
-The are also update and cleanup commands. Update installs the default version of
-the requested profile or for all profiles for the already installed targets.
-Cleanup will uninstall targets whose version is older than the default.
-
-Finally, there are commands to list the available and installed profiles and to
-access the environment variables specified and stored in each profile
-installation and a command (recreate) to generate a list of commands that can be
-run to recreate the currently installed profiles.
-
-The Profiles Database
-
-The profiles packages manages a database that tracks the installed profiles and
-their configurations. Other command line tools and packages are expected to read
-information about the currently installed profiles from this database via the
-profiles package. The profile command line tools support displaying the database
-(via the list command) or for specifying an alternate version of the file (via
-the -profiles-db flag) which is generally useful for debugging.
-
-Adding Profiles
-
-Profiles are intended to be provided as go packages that register themselves
-with the profile command line tools via the *v.io/jiri/profiles* package. They
-must implement the interfaces defined by that package and be imported (e.g.
-import _ "myprofile") by the command line tools that are to use them.
-
-Usage:
-   jiri v23-profile [flags] <command>
-
-The jiri v23-profile commands are:
-   install     Install the given profiles
-   uninstall   Uninstall the given profiles
-   update      Install the latest default version of the given profiles
-   cleanup     Cleanup the locally installed profiles
-   available   List the available profiles
-   list        List available or installed profiles
-   env         Display profile environment variables
-
-The jiri v23-profile flags are:
- -color=true
-   Use color to format output.
- -v=false
-   Print verbose output.
-
-Jiri v23-profile install - Install the given profiles
-
-Install the given profiles.
-
-Usage:
-   jiri v23-profile install [flags] <profiles>
-
-<profiles> is a list of profiles to install.
-
-The jiri v23-profile install flags are:
- -env=
-   specify an environment variable in the form: <var>=[<val>],...
- -force=false
-   force install the profile even if it is already installed
- -go.sysroot-image=
-   sysroot image for cross compiling to the currently specified target
- -go.sysroot-image-dirs-to-use=/lib:/usr/lib:/usr/include
-   a colon separated list of directories to use from the sysroot image
- -mojodev.dir=
-   Path of mojo repo checkout.
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
-   the directory, relative to JIRI_ROOT, that profiles are installed in
- -target=<runtime.GOARCH>-<runtime.GOOS>
-   specifies a profile target in the following form: <arch>-<os>[@<version>]
-
- -color=true
-   Use color to format output.
- -v=false
-   Print verbose output.
-
-Jiri v23-profile uninstall - Uninstall the given profiles
-
-Uninstall the given profiles.
-
-Usage:
-   jiri v23-profile uninstall [flags] <profiles>
-
-<profiles> is a list of profiles to uninstall.
-
-The jiri v23-profile uninstall flags are:
- -all-targets=false
-   apply to all targets for the specified profile(s)
- -go.sysroot-image=
-   sysroot image for cross compiling to the currently specified target
- -go.sysroot-image-dirs-to-use=/lib:/usr/lib:/usr/include
-   a colon separated list of directories to use from the sysroot image
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
-   the directory, relative to JIRI_ROOT, that profiles are installed in
- -target=<runtime.GOARCH>-<runtime.GOOS>
-   specifies a profile target in the following form: <arch>-<os>[@<version>]
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile update - Install the latest default version of the given
-profiles
-
-Install the latest default version of the given profiles.
-
-Usage:
-   jiri v23-profile update [flags] <profiles>
-
-<profiles> is a list of profiles to update, if omitted all profiles are updated.
-
-The jiri v23-profile update flags are:
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
-   the directory, relative to JIRI_ROOT, that profiles are installed in
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile cleanup - Cleanup the locally installed profiles
-
-Cleanup the locally installed profiles. This is generally required when
-recovering from earlier bugs or when preparing for a subsequent change to the
-profiles implementation.
-
-Usage:
-   jiri v23-profile cleanup [flags] <profiles>
-
-<profiles> is a list of profiles to cleanup, if omitted all profiles are
-cleaned.
-
-The jiri v23-profile cleanup flags are:
- -gc=false
-   uninstall profile targets that are older than the current default
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
-   the directory, relative to JIRI_ROOT, that profiles are installed in
- -rewrite-profiles-db=false
-   rewrite the profiles database to use the latest schema version
- -rm-all=false
-   remove profiles database and all profile generated output files.
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile available - List the available profiles
-
-List the available profiles.
-
-Usage:
-   jiri v23-profile available [flags]
-
-The jiri v23-profile available flags are:
- -describe=false
-   print the profile description
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile list - List available or installed profiles
-
-List available or installed profiles.
-
-Usage:
-   jiri v23-profile list [flags] [<profiles>]
-
-<profiles> is a list of profiles to list, defaulting to all profiles if none are
-specifically requested. List can also be used to test for the presence of a
-specific target for the requested profiles. If the target is not installed, it
-will exit with an error.
-
-The jiri v23-profile list flags are:
- -env=
-   specify an environment variable in the form: <var>=[<val>],...
- -info=
-   The following fields for use with -info are available:
-   	SchemaVersion - the version of the profiles implementation.
-   	DBPath - the path for the profiles database.
-   	Target.InstallationDir - the installation directory of the requested profile.
-   	Target.CommandLineEnv - the environment variables specified via the command line when installing this profile target.
-   	Target.Env - the environment variables computed by the profile installation process for this target.
-   	Target.Command - a command that can be used to create this profile.
-   	Note: if no --target is specified then the requested field will be displayed for all targets.
-
-   	Profile.Root - the root directory of the requested profile.
-   	Profile.Name - the qualified name of the profile.
-   	Profile.Installer - the name of the profile installer.
-   	Profile.DBPath - the path to the database file for this profile.
-   	Note: if no profiles are specified then the requested field will be displayed for all profiles.
- -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
-   specify policies for merging environment variables
- -profiles=base,jiri
-   a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -skip-profiles=false
-   if set, no profiles will be used
- -target=<runtime.GOARCH>-<runtime.GOOS>
-   specifies a profile target in the following form: <arch>-<os>[@<version>]
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile env - Display profile environment variables
-
-List profile specific and target specific environment variables. If the
-requested environment variable name ends in = then only the value will be
-printed, otherwise both name and value are printed, i.e. GOPATH="foo" vs just
-"foo".
-
-If no environment variable names are requested then all will be printed in
-<name>=<val> format.
-
-Usage:
-   jiri v23-profile env [flags] [<environment variable names>]
-
-[<environment variable names>] is an optional list of environment variables to
-display
-
-The jiri v23-profile env flags are:
- -env=
-   specify an environment variable in the form: <var>=[<val>],...
- -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
-   specify policies for merging environment variables
- -profiles=base,jiri
-   a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -skip-profiles=false
-   if set, no profiles will be used
- -target=<runtime.GOARCH>-<runtime.GOOS>
-   specifies a profile target in the following form: <arch>-<os>[@<version>]
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
+Jiri v23-profile - No description available
 
 Jiri filesystem - Description of jiri file system layout
 

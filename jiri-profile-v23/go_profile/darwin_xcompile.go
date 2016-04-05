@@ -110,7 +110,7 @@ func useLLVM(jirix *jiri.X, m *Manager, root jiri.RelPath, target profiles.Targe
 			Pushd(binutilsSrc).
 			MkdirAll(absBinutilsBin, profilesutil.DefaultDirPerm).
 			Run("./configure", "--target="+targetABI, "--program-prefix=",
-			"--prefix="+absBinutilsBin, "--with-sysroot=yes").
+				"--prefix="+absBinutilsBin, "--with-sysroot=yes").
 			Run("make", "-j8").
 			Last("make", "install")
 	}
@@ -125,8 +125,8 @@ func useLLVM(jirix *jiri.X, m *Manager, root jiri.RelPath, target profiles.Targe
 		return jirix.NewSeq().MkdirAll(absClangBuildSrc, profilesutil.DefaultDirPerm).
 			Pushd(absClangBuildSrc).
 			Run("cmake", "-GUnix Makefiles", "-DCMAKE_INSTALL_PREFIX="+inst.Abs(jirix),
-			"-DLLVM_TARGETS_TO_BUILD=ARM",
-			"-DLLVM_EXTERNAL_CLANG_SOURCE_DIR="+absClangSrc, absLLVMSrc).
+				"-DLLVM_TARGETS_TO_BUILD=ARM",
+				"-DLLVM_EXTERNAL_CLANG_SOURCE_DIR="+absClangSrc, absLLVMSrc).
 			Run("make", "-j8").
 			Last("make", "install")
 	}
@@ -202,8 +202,8 @@ func useLLVM(jirix *jiri.X, m *Manager, root jiri.RelPath, target profiles.Targe
 	}
 
 	vars := []string{
-		"CC_FOR_TARGET=" + filepath.Join(ci.ClangBin, "go-"+targetABI+"-clang"),
-		"CXX_FOR_TARGET=" + filepath.Join(ci.ClangBin, "go-"+targetABI+"-clang++"),
+		"CC=" + filepath.Join(ci.ClangBin, "go-"+targetABI+"-clang"),
+		"CXX=" + filepath.Join(ci.ClangBin, "go-"+targetABI+"-clang++"),
 		"CLANG_BIN=" + filepath.Join(ci.ClangBin),
 		"BINUTILS_BIN=" + filepath.Join(ci.BinutilsBin, "bin"),
 		"CLANG=" + filepath.Join(ci.ClangBin, "go-"+targetABI+"-clang"),

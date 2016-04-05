@@ -22,9 +22,9 @@ import (
 	"v.io/jiri/profiles/profilesreader"
 	"v.io/jiri/runutil"
 	"v.io/jiri/tool"
-	"v.io/jiri/util"
 	"v.io/x/devtools/internal/test"
 	"v.io/x/devtools/internal/xunit"
+	"v.io/x/devtools/tooldata"
 )
 
 const (
@@ -119,6 +119,7 @@ var testFunctions = map[string]func(*jiri.X, string, ...Opt) (*test.Result, erro
 	"vanadium-js-vdl":                         vanadiumJSVdl,
 	"vanadium-js-vdl-audit":                   vanadiumJSVdlAudit,
 	"vanadium-js-vom":                         vanadiumJSVom,
+	"vanadium-mojo-discovery-test":            vanadiumMojoDiscoveryTest,
 	"vanadium-mojo-syncbase-test":             vanadiumMojoSyncbaseTest,
 	"vanadium-mojo-v23proxy-unit-test":        vanadiumMojoV23ProxyUnitTest,
 	"vanadium-mojo-v23proxy-integration-test": vanadiumMojoV23ProxyIntegrationTest,
@@ -137,6 +138,8 @@ var testFunctions = map[string]func(*jiri.X, string, ...Opt) (*test.Result, erro
 	"vanadium-release-candidate":              vanadiumReleaseCandidate,
 	"vanadium-release-candidate-snapshot":     vanadiumReleaseCandidateSnapshot,
 	"vanadium-release-production":             vanadiumReleaseProduction,
+	"vanadium-release-kube-staging":           vanadiumReleaseKubeStaging,
+	"vanadium-release-kube-production":        vanadiumReleaseKubeProduction,
 	"vanadium-signup-github":                  vanadiumSignupGithub,
 	"vanadium-signup-github-new":              vanadiumSignupGithubNew,
 	"vanadium-signup-group":                   vanadiumSignupGroup,
@@ -147,6 +150,7 @@ var testFunctions = map[string]func(*jiri.X, string, ...Opt) (*test.Result, erro
 	"vanadium-signup-welcome-1-new":           vanadiumSignupWelcomeStepOneNew,
 	"vanadium-signup-welcome-2-new":           vanadiumSignupWelcomeStepTwoNew,
 	"vanadium-travel-test":                    vanadiumTravelTest,
+	"vanadium-website-deploy":                 vanadiumWebsiteDeploy,
 	"vanadium-website-site":                   vanadiumWebsiteSite,
 	"vanadium-website-tutorials-core":         vanadiumWebsiteTutorialsCore,
 	"vanadium-website-tutorials-external":     vanadiumWebsiteTutorialsExternal,
@@ -233,7 +237,7 @@ func RunProjectTests(jirix *jiri.X, env map[string]string, projects []string, op
 	testCtx := newTestContext(jirix, env)
 
 	// Parse tests and dependencies from config file.
-	config, err := util.LoadConfig(jirix)
+	config, err := tooldata.LoadConfig(jirix)
 	if err != nil {
 		return nil, err
 	}
@@ -524,7 +528,7 @@ func generateXUnitReportForError(jirix *jiri.X, testName string, err error, outp
 
 // createTestDepGraph creates a test dependency graph given a map of
 // dependencies and a list of tests.
-func createTestDepGraph(config *util.Config, tests []string) (testDepGraph, error) {
+func createTestDepGraph(config *tooldata.Config, tests []string) (testDepGraph, error) {
 	// For the given list of tests, build a map from the test name
 	// to its testInfo object using the dependency data extracted
 	// from the given dependency config data "dep".

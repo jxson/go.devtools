@@ -26,7 +26,7 @@ import (
 	"v.io/jiri/project"
 	"v.io/jiri/runutil"
 	"v.io/jiri/tool"
-	"v.io/jiri/util"
+	"v.io/x/devtools/tooldata"
 	"v.io/x/lib/cmdline"
 	"v.io/x/lib/envvar"
 )
@@ -42,7 +42,7 @@ var (
 func init() {
 	cmdAPICheck.Flags.BoolVar(&detailedOutputFlag, "detailed", true, "If true, shows each API change in an expanded form. Otherwise, only a summary is shown.")
 	cmdAPI.Flags.StringVar(&gotoolsBinPathFlag, "gotools-bin", "", "The path to the gotools binary to use. If empty, gotools will be built if necessary.")
-	profilescmdline.RegisterReaderFlags(&cmdAPI.Flags, &readerFlags, jiri.DefaultProfilesDBPath())
+	profilescmdline.RegisterReaderFlags(&cmdAPI.Flags, &readerFlags, jiri.ProfilesDBDir)
 	tool.InitializeProjectFlags(&cmdAPI.Flags)
 	tool.InitializeRunFlags(&cmdAPI.Flags)
 }
@@ -314,7 +314,7 @@ func printChangeSummary(out io.Writer, change packageChange, detailedOutput bool
 }
 
 func doAPICheck(jirix *jiri.X, args []string, detailedOutput bool) error {
-	config, err := util.LoadConfig(jirix)
+	config, err := tooldata.LoadConfig(jirix)
 	if err != nil {
 		return err
 	}
@@ -345,7 +345,7 @@ var cmdAPIUpdate = &cmdline.Command{
 }
 
 func runAPIFix(jirix *jiri.X, args []string) error {
-	config, err := util.LoadConfig(jirix)
+	config, err := tooldata.LoadConfig(jirix)
 	if err != nil {
 		return err
 	}

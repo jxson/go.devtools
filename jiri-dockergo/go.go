@@ -20,6 +20,7 @@ import (
 	"v.io/jiri/runutil"
 	"v.io/jiri/tool"
 	"v.io/x/devtools/internal/golib"
+	"v.io/x/devtools/tooldata"
 	"v.io/x/lib/cmdline"
 	"v.io/x/lib/lookpath"
 )
@@ -75,7 +76,7 @@ const dockerBin = "docker"
 
 func init() {
 	tool.InitializeRunFlags(&cmd.Flags)
-	profilescmdline.RegisterReaderFlags(&cmd.Flags, &readerFlags, jiri.DefaultProfilesDBPath())
+	profilescmdline.RegisterReaderFlags(&cmd.Flags, &readerFlags, jiri.ProfilesDBDir)
 	flag.StringVar(&imageFlag, "image", "", "Name of the docker image to use. If empty, the tool will automatically select an image based on the environment variables, possibly edited by the profile")
 	flag.StringVar(&extraLDFlags, "extra-ldflags", "", golib.ExtraLDFlagsFlagDescription)
 }
@@ -84,15 +85,24 @@ func runGo(jirix *jiri.X, args []string) error {
 	if len(args) == 0 {
 		return jirix.UsageErrorf("not enough arguments")
 	}
+	config, err := tooldata.LoadConfig(jirix)
+	if err != nil {
+		return err
+	}
 	rd, err := profilesreader.NewReader(jirix, readerFlags.ProfilesMode, readerFlags.DBFilename)
 	if err != nil {
 		return err
 	}
-	profileNames := profilesreader.InitProfilesFromFlag(readerFlags.Profiles, profilesreader.DoNotAppendJiriProfile)
+	profileNames := strings.Split(readerFlags.Profiles, ",")
 	if err := rd.ValidateRequestedProfilesAndTarget(profileNames, readerFlags.Target); err != nil {
 		return err
 	}
 	rd.MergeEnvFromProfiles(readerFlags.MergePolicies, readerFlags.Target, "jiri")
+	mp := profilesreader.MergePolicies{
+		"GOPATH":  profilesreader.PrependPath,
+		"VDLPATH": profilesreader.PrependPath,
+	}
+	profilesreader.MergeEnv(mp, rd.Vars, []string{config.GoPath(jirix), config.VDLPath(jirix)})
 	if jirix.Verbose() {
 		fmt.Fprintf(jirix.Stdout(), "Merged profiles: %v\n", readerFlags.Profiles)
 		fmt.Fprintf(jirix.Stdout(), "Merge policies: %v\n", readerFlags.MergePolicies)
@@ -121,6 +131,9 @@ func runGo(jirix *jiri.X, args []string) error {
 	}
 	if args, err = golib.PrepareGo(jirix, envMap, args, extraLDFlags, installSuffix); err != nil {
 		return err
+	}
+	if len(args) == 1 && args[0] == "env" {
+		return nil
 	}
 	if jirix.Verbose() {
 		fmt.Fprintf(jirix.Stderr(), "Using docker image: %q\n", img)

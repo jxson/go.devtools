@@ -75,19 +75,17 @@ must implement the interfaces defined by that package and be imported (e.g.
 import _ "myprofile") by the command line tools that are to use them.
 
 Usage:
-   jiri v23-profile [flags] <command>
+   jiri profile-v23 [flags] <command>
 
-The jiri v23-profile commands are:
+The jiri profile-v23 commands are:
    install     Install the given profiles
    uninstall   Uninstall the given profiles
    update      Install the latest default version of the given profiles
    cleanup     Cleanup the locally installed profiles
    available   List the available profiles
-   list        List available or installed profiles
-   env         Display profile environment variables
    help        Display help for commands or topics
 
-The jiri v23-profile flags are:
+The jiri profile-v23 flags are:
  -color=true
    Use color to format output.
  -v=false
@@ -99,16 +97,16 @@ The global flags are:
  -time=false
    Dump timing information to stderr before exiting the program.
 
-Jiri v23-profile install - Install the given profiles
+Jiri profile-v23 install - Install the given profiles
 
 Install the given profiles.
 
 Usage:
-   jiri v23-profile install [flags] <profiles>
+   jiri profile-v23 install [flags] <profiles>
 
 <profiles> is a list of profiles to install.
 
-The jiri v23-profile install flags are:
+The jiri profile-v23 install flags are:
  -env=
    specify an environment variable in the form: <var>=[<val>],...
  -force=false
@@ -119,9 +117,9 @@ The jiri v23-profile install flags are:
    a colon separated list of directories to use from the sysroot image
  -mojodev.dir=
    Path of mojo repo checkout.
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
+ -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
  -target=<runtime.GOARCH>-<runtime.GOOS>
    specifies a profile target in the following form: <arch>-<os>[@<version>]
@@ -131,25 +129,25 @@ The jiri v23-profile install flags are:
  -v=false
    Print verbose output.
 
-Jiri v23-profile uninstall - Uninstall the given profiles
+Jiri profile-v23 uninstall - Uninstall the given profiles
 
 Uninstall the given profiles.
 
 Usage:
-   jiri v23-profile uninstall [flags] <profiles>
+   jiri profile-v23 uninstall [flags] <profiles>
 
 <profiles> is a list of profiles to uninstall.
 
-The jiri v23-profile uninstall flags are:
+The jiri profile-v23 uninstall flags are:
  -all-targets=false
    apply to all targets for the specified profile(s)
  -go.sysroot-image=
    sysroot image for cross compiling to the currently specified target
  -go.sysroot-image-dirs-to-use=/lib:/usr/lib:/usr/include
    a colon separated list of directories to use from the sysroot image
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
+ -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
  -target=<runtime.GOARCH>-<runtime.GOOS>
    specifies a profile target in the following form: <arch>-<os>[@<version>]
@@ -159,19 +157,19 @@ The jiri v23-profile uninstall flags are:
  -color=true
    Use color to format output.
 
-Jiri v23-profile update - Install the latest default version of the given profiles
+Jiri profile-v23 update - Install the latest default version of the given profiles
 
 Install the latest default version of the given profiles.
 
 Usage:
-   jiri v23-profile update [flags] <profiles>
+   jiri profile-v23 update [flags] <profiles>
 
 <profiles> is a list of profiles to update, if omitted all profiles are updated.
 
-The jiri v23-profile update flags are:
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+The jiri profile-v23 update flags are:
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
+ -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
  -v=false
    print more detailed information
@@ -179,24 +177,24 @@ The jiri v23-profile update flags are:
  -color=true
    Use color to format output.
 
-Jiri v23-profile cleanup - Cleanup the locally installed profiles
+Jiri profile-v23 cleanup - Cleanup the locally installed profiles
 
 Cleanup the locally installed profiles. This is generally required when
 recovering from earlier bugs or when preparing for a subsequent change to the
 profiles implementation.
 
 Usage:
-   jiri v23-profile cleanup [flags] <profiles>
+   jiri profile-v23 cleanup [flags] <profiles>
 
 <profiles> is a list of profiles to cleanup, if omitted all profiles are
 cleaned.
 
-The jiri v23-profile cleanup flags are:
+The jiri profile-v23 cleanup flags are:
  -gc=false
    uninstall profile targets that are older than the current default
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
+ -profiles-db=$JIRI_ROOT/.jiri_root/profile_db
    the path, relative to JIRI_ROOT, that contains the profiles database.
- -profiles-dir=profiles
+ -profiles-dir=.jiri_root/profiles
    the directory, relative to JIRI_ROOT, that profiles are installed in
  -rewrite-profiles-db=false
    rewrite the profiles database to use the latest schema version
@@ -208,14 +206,14 @@ The jiri v23-profile cleanup flags are:
  -color=true
    Use color to format output.
 
-Jiri v23-profile available - List the available profiles
+Jiri profile-v23 available - List the available profiles
 
 List the available profiles.
 
 Usage:
-   jiri v23-profile available [flags]
+   jiri profile-v23 available [flags]
 
-The jiri v23-profile available flags are:
+The jiri profile-v23 available flags are:
  -describe=false
    print the profile description
  -v=false
@@ -224,88 +222,7 @@ The jiri v23-profile available flags are:
  -color=true
    Use color to format output.
 
-Jiri v23-profile list - List available or installed profiles
-
-List available or installed profiles.
-
-Usage:
-   jiri v23-profile list [flags] [<profiles>]
-
-<profiles> is a list of profiles to list, defaulting to all profiles if none are
-specifically requested. List can also be used to test for the presence of a
-specific target for the requested profiles. If the target is not installed, it
-will exit with an error.
-
-The jiri v23-profile list flags are:
- -env=
-   specify an environment variable in the form: <var>=[<val>],...
- -info=
-   The following fields for use with -info are available:
-   	SchemaVersion - the version of the profiles implementation.
-   	DBPath - the path for the profiles database.
-   	Target.InstallationDir - the installation directory of the requested profile.
-   	Target.CommandLineEnv - the environment variables specified via the command line when installing this profile target.
-   	Target.Env - the environment variables computed by the profile installation process for this target.
-   	Target.Command - a command that can be used to create this profile.
-   	Note: if no --target is specified then the requested field will be displayed for all targets.
-
-   	Profile.Root - the root directory of the requested profile.
-   	Profile.Name - the qualified name of the profile.
-   	Profile.Installer - the name of the profile installer.
-   	Profile.DBPath - the path to the database file for this profile.
-   	Note: if no profiles are specified then the requested field will be displayed for all profiles.
- -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
-   specify policies for merging environment variables
- -profiles=base,jiri
-   a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -skip-profiles=false
-   if set, no profiles will be used
- -target=<runtime.GOARCH>-<runtime.GOOS>
-   specifies a profile target in the following form: <arch>-<os>[@<version>]
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile env - Display profile environment variables
-
-List profile specific and target specific environment variables. If the
-requested environment variable name ends in = then only the value will be
-printed, otherwise both name and value are printed, i.e. GOPATH="foo" vs just
-"foo".
-
-If no environment variable names are requested then all will be printed in
-<name>=<val> format.
-
-Usage:
-   jiri v23-profile env [flags] [<environment variable names>]
-
-[<environment variable names>] is an optional list of environment variables to
-display
-
-The jiri v23-profile env flags are:
- -env=
-   specify an environment variable in the form: <var>=[<val>],...
- -merge-policies=+CCFLAGS,+CGO_CFLAGS,+CGO_CXXFLAGS,+CGO_LDFLAGS,+CXXFLAGS,GOARCH,GOOS,GOPATH:,^GOROOT*,+LDFLAGS,:PATH,VDLPATH:
-   specify policies for merging environment variables
- -profiles=base,jiri
-   a comma separated list of profiles to use
- -profiles-db=$JIRI_ROOT/.jiri_v23_profiles
-   the path, relative to JIRI_ROOT, that contains the profiles database.
- -skip-profiles=false
-   if set, no profiles will be used
- -target=<runtime.GOARCH>-<runtime.GOOS>
-   specifies a profile target in the following form: <arch>-<os>[@<version>]
- -v=false
-   print more detailed information
-
- -color=true
-   Use color to format output.
-
-Jiri v23-profile help - Display help for commands or topics
+Jiri profile-v23 help - Display help for commands or topics
 
 Help with no args displays the usage of the parent command.
 
@@ -314,11 +231,11 @@ Help with args displays the usage of the specified sub-command or help topic.
 "help ..." recursively displays help for all commands and topics.
 
 Usage:
-   jiri v23-profile help [flags] [command/topic ...]
+   jiri profile-v23 help [flags] [command/topic ...]
 
 [command/topic ...] optionally identifies a specific sub-command or help topic.
 
-The jiri v23-profile help flags are:
+The jiri profile-v23 help flags are:
  -style=compact
    The formatting style for help output:
       compact   - Good for compact cmdline output.

@@ -90,6 +90,11 @@ var (
 			github:       "git@github.com:vanadium/js.syncbase.git",
 		},
 		Mirror{
+			name:         "madb",
+			googlesource: "https://vanadium.googlesource.com/release.projects.madb",
+			github:       "git@github.com:vanadium/madb.git",
+		},
+		Mirror{
 			name:         "manifest",
 			googlesource: "https://vanadium.googlesource.com/manifest",
 			github:       "git@github.com:vanadium/manifest.git",
@@ -219,7 +224,8 @@ func gitHubSync(jirix *jiri.X, mirror Mirror, projects string) (*xunit.TestSuite
 	suite := xunit.TestSuite{Name: mirror.name}
 	dirname := filepath.Join(projects, mirror.name)
 
-	// If dirname does not exist `git clone` otherwise `git pull`.
+	// If dirname does not exist `git clone` otherwise `git fetch` and
+	// `git reset --hard origin/master`.
 	if _, err := jirix.NewSeq().Stat(dirname); err != nil {
 		if !runutil.IsNotExist(err) {
 			return nil, newInternalError(err, "stat")
@@ -232,8 +238,8 @@ func gitHubSync(jirix *jiri.X, mirror Mirror, projects string) (*xunit.TestSuite
 		}
 		suite.Cases = append(suite.Cases, *testCase)
 	} else {
-		err := pull(jirix, mirror, projects)
-		testCase := makeTestCase("pull", err)
+		err := reset(jirix, mirror, projects)
+		testCase := makeTestCase("reset", err)
 		if err != nil {
 			suite.Failures++
 		}
@@ -272,14 +278,22 @@ func clone(jirix *jiri.X, mirror Mirror, projects string) error {
 	return gitutil.New(jirix.NewSeq()).CloneRecursive(mirror.googlesource, dirname)
 }
 
-func pull(jirix *jiri.X, mirror Mirror, projects string) error {
+func reset(jirix *jiri.X, mirror Mirror, projects string) error {
 	dirname := filepath.Join(projects, mirror.name)
-	opts := gitutil.RootDirOpt(dirname)
-	return gitutil.New(jirix.NewSeq(), opts).Pull("origin", "master")
+	rootOpt := gitutil.RootDirOpt(dirname)
+	git := gitutil.New(jirix.NewSeq(), rootOpt)
+
+	// Fetch master branch from origin.
+	if err := git.FetchRefspec("origin", "master"); err != nil {
+		return err
+	}
+
+	// Reset local master to origin/master.
+	return git.Reset("origin/master")
 }
 
 func push(jirix *jiri.X, mirror Mirror, projects string) error {
 	dirname := filepath.Join(projects, mirror.name)
 	opts := gitutil.RootDirOpt(dirname)
-	return gitutil.New(jirix.NewSeq(), opts).Push(mirror.github, "master")
+	return gitutil.New(jirix.NewSeq(), opts).Push(mirror.github, "master", gitutil.ForceOpt(true))
 }
